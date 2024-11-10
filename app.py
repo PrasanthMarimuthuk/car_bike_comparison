@@ -172,7 +172,7 @@ def get_ai_suggestions():
             return jsonify({'suggestion': 'Please select both vehicles to compare'}), 400
 
         # Initialize Mistral client
-        api_key = os.environ.get('API_KEY')
+        api_key = "MQfygqHor1qaUCRwRUFG0XPe62qbbdR8"
         client = Mistral(api_key=api_key)
         model = "mistral-large-latest"
 
