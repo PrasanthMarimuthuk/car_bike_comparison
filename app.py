@@ -4,6 +4,7 @@ import pandas as pd
 from flask import Flask, render_template, request, jsonify
 from mistralai import Mistral
 from http.client import responses
+import asyncio
 #import timeout_decorator
 
 app = Flask(__name__)
@@ -177,26 +178,7 @@ def get_ai_suggestions():
         model = "mistral-large-latest"
 
         # Prepare the structured comparison prompt
-        message = f"""Provide a structured comparison between {brand1} {model1} and {brand2} {model2} with the following format:
-
-Key Features:
-• List key features of {brand1} {model1}
-• List key features of {brand2} {model2}
-
-Performance Comparison:
-• Power and acceleration
-• Fuel efficiency
-• Handling and comfort
-
-Value Proposition:
-• Price comparison
-• Cost-effectiveness
-• Target audience
-
-Final Recommendation:
-• Clear recommendation based on different use cases
-
-Please provide a detailed comparison without using any markdown symbols like ** or ###."""
+        message = f"""Provide a structured comparison between {brand1} {model1} and {brand2} {model2} and recommendation.Please provide a detailed comparison without using any markdown symbols like ** or ###."""
 
         # Get the response from Mistral
         
