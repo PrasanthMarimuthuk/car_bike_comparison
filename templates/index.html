@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOTOHUB's Car & Bike Comparison Tool</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            background-image: url('static/images/car_image.jpg');  /* Make sure to create a static/images folder and add your background image */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+        
+        .content-wrapper {
+            background-color: rgba(255, 255, 255, 0.95);  /* Semi-transparent white background */
+        }
+
+        .comparison-table {
+            background-color: rgba(255, 255, 255, 0.98);  /* More opaque white for better readability */
+        }
+        .ai-suggestion {
+            font-family: "Times New Roman", Times, serif;
+        }
+        
+        .ai-suggestion h3 {
+            color: #000101;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+        }
+        
+        .ai-suggestion p {
+            margin: 1rem 0;
+            line-height: 1.6;
+        }
+        
+        .ai-suggestion br {
+            margin-bottom: 0.5rem;
+        }
+        
+        #aiSuggestion {
+            margin-top: 2rem;
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-8">
+    <div class="max-w-7xl mx-auto content-wrapper rounded-lg shadow-lg p-6">
+        <h1 class="text-3xl font-bold text-center mb-8">MOTOHUB's Car & Bike Comparison Tool</h1>
+
+        <form method="POST" action="{{ url_for('compare') }}" class="space-y-6">
+            <!-- Vehicle Type Selection -->
+            <div class="flex justify-center gap-4 mb-6">
+                <div class="flex items-center">
+                    <input type="radio" id="car" name="vehicle_type" value="car" checked
+                           class="form-radio h-4 w-4 text-black">
+                    <label for="car" class="ml-2 text-gray-700">Car</label>
+                </div>
+                <div class="flex items-center">
+                    <input type="radio" id="bike" name="vehicle_type" value="bike"
+                           class="form-radio h-4 w-4 text-black">
+                    <label for="bike" class="ml-2 text-gray-700">Bike</label>
+                </div>
+            </div>
+
+            <!-- Vehicle Selection Grid -->
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- Vehicle 1 Selection -->
+                <div class="border p-4 rounded-lg bg-white bg-opacity-90">
+                    <h2 class="text-xl font-semibold mb-4">Vehicle 1</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Brand</label>
+                            <select name="selected_brand1" id="brand1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black">
+                                <option value="">Select Brand</option>
+                                {% for brand in car_brands %}
+                                <option value="{{ brand }}" {% if selected_brand1 == brand %}selected{% endif %}>{{ brand }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Model</label>
+                            <select name="selected_model1" id="model1" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black">
+                                <option value="">Select Model</option>
+                                {% if selected_brand1 and selected_model1 %}
+                                    {% for model in car_models[selected_brand1] %}
+                                        <option value="{{ model }}" {% if selected_model1 == model %}selected{% endif %}>{{ model }}</option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vehicle 2 Selection -->
+                <div class="border p-4 rounded-lg bg-white bg-opacity-90">
+                    <h2 class="text-xl font-semibold mb-4">Vehicle 2</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Brand</label>
+                            <select name="selected_brand2" id="brand2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black">
+                                <option value="">Select Brand</option>
+                                {% for brand in car_brands %}
+                                <option value="{{ brand }}" {% if selected_brand2 == brand %}selected{% endif %}>{{ brand }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Model</label>
+                            <select name="selected_model2" id="model2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-black focus:ring-black">
+                                <option value="">Select Model</option>
+                                {% if selected_brand2 and selected_model2 %}
+                                    {% for model in car_models[selected_brand2] %}
+                                        <option value="{{ model }}" {% if selected_model2 == model %}selected{% endif %}>{{ model }}</option>
+                                    {% endfor %}
+                                {% endif %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Compare Button -->
+            <div class="text-center">
+                <button type="submit" class="bg-black text-white px-6 py-2 rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                    Compare Vehicles
+                </button>
+            </div>
+        </form>
+
+        <!-- Comparison Results -->
+        {% if comparison_table %}
+        <div class="mt-8">
+            <h2 class="text-2xl font-bold mb-4">Comparison Results</h2>
+            <div class="overflow-x-auto comparison-table rounded-lg">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Specification</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ selected_brand1 }} {{ selected_model1 }}</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ selected_brand2 }} {{ selected_model2 }}</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for row in comparison_table %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-base font-medium text-black">{{ row.Spec }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-base text-black">{{ row['Vehicle 1']|safe }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-base text-black">{{ row['Vehicle 2']|safe }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- AI Suggestion Button -->
+            <div class="mt-6 text-center">
+                <button id="getAiSuggestions" class="bg-black text-white px-6 py-2 rounded-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 flex items-center justify-center mx-auto">
+                    Get AI Suggestion
+                    <span id="loadingSpinner" class="loading-spinner hidden"></span>
+                </button>
+            </div>
+            <div id="aiSuggestion" class="hidden"></div>
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <div class="mt-4 p-4 bg-red-100 text-red-700 rounded-lg">
+            {{ error }}
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+    const vehicleTypeInputs = document.querySelectorAll('input[name="vehicle_type"]');
+    const brand1Select = document.getElementById('brand1');
+    const brand2Select = document.getElementById('brand2');
+    const model1Select = document.getElementById('model1');
+    const model2Select = document.getElementById('model2');
+
+    // Update brands based on vehicle type
+    function updateBrands(vehicleType) {
+        const brands = vehicleType === 'car' ? JSON.parse('{{ car_brands|tojson|safe }}') : JSON.parse('{{ bike_brands|tojson|safe }}');
+        const models = vehicleType === 'car' ? JSON.parse('{{ car_models|tojson|safe }}') : JSON.parse('{{ bike_models|tojson|safe }}');
+
+        [brand1Select, brand2Select].forEach(select => {
+            const currentValue = select.value;
+            select.innerHTML = '<option value="">Select Brand</option>';
+            brands.forEach(brand => {
+                const option = new Option(brand, brand);
+                if (brand === currentValue) option.selected = true;
+                select.appendChild(option);
+            });
+        });
+
+        // Clear model selections
+        model1Select.innerHTML = '<option value="">Select Model</option>';
+        model2Select.innerHTML = '<option value="">Select Model</option>';
+    }
+
+    // Update models based on brand selection
+    function updateModels(brandSelect, modelSelect) {
+        const vehicleType = document.querySelector('input[name="vehicle_type"]:checked').value;
+        const models = vehicleType === 'car' ? JSON.parse('{{ car_models|tojson|safe }}') : JSON.parse('{{ bike_models|tojson|safe }}');
+        const brand = brandSelect.value;
+
+        modelSelect.innerHTML = '<option value="">Select Model</option>';
+        if (brand && models[brand]) {
+            models[brand].forEach(model => {
+                modelSelect.appendChild(new Option(model, model));
+            });
+        }
+    }
+
+    // Event Listeners
+    vehicleTypeInputs.forEach(input => {
+        input.addEventListener('change', () => updateBrands(input.value));
+    });
+
+    brand1Select.addEventListener('change', () => updateModels(brand1Select, model1Select));
+    brand2Select.addEventListener('change', () => updateModels(brand2Select, model2Select));
+
+    // AI Suggestion Handler
+    const aiButton = document.getElementById('getAiSuggestions');
+    const aiContainer = document.getElementById('aiSuggestion');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+
+    if (aiButton) {
+        aiButton.addEventListener('click', function() {
+            // Disable button and show loading spinner
+            aiButton.disabled = true;
+            loadingSpinner.classList.remove('hidden');
+            aiContainer.classList.add('hidden');
+
+            const brand1 = document.getElementById('brand1').value;
+            const model1 = document.getElementById('model1').value;
+            const brand2 = document.getElementById('brand2').value;
+            const model2 = document.getElementById('model2').value;
+
+            $.ajax({
+                type: 'POST',
+                url: '/get_ai_suggestions',
+                data: {
+                    brand1: brand1,
+                    model1: model1,
+                    brand2: brand2,
+                    model2: model2
+                },
+                success: function(data) {
+                    // Hide loading spinner and enable button
+                    loadingSpinner.classList.add('hidden');
+                    aiButton.disabled = false;
+                    
+                    // Display the suggestion with smooth fade-in
+                    aiContainer.innerHTML = data.suggestion;
+                    aiContainer.classList.remove('hidden');
+                    aiContainer.style.opacity = '0';
+                    aiContainer.style.transition = 'opacity 0.3s ease-in';
+                    setTimeout(() => {
+                        aiContainer.style.opacity = '1';
+                    }, 50);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error:', error);
+                    loadingSpinner.classList.add('hidden');
+                    aiButton.disabled = false;
+                    aiContainer.innerHTML = `
+                        <div class="bg-red-100 text-red-700 p-4 rounded-lg">
+                            Error getting AI suggestion. Please try again.
+                        </div>
+                    `;
+                    aiContainer.classList.remove('hidden');
+                }
+            });
+        });
+    }
+});
+    </script>
+</body>
+</html>
