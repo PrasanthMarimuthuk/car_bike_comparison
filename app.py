@@ -178,7 +178,7 @@ def get_ai_suggestions():
         model = "mistral-large-latest"
 
         # Prepare the structured comparison prompt
-        message = f"""Provide a structured comparison between {brand1} {model1} and {brand2} {model2} and recommendation.Please provide a detailed comparison without using any markdown symbols like ** or ###."""
+        message = f"""Provide a Brief comparison between {brand1} {model1} and {brand2} {model2} and recommendation.Please provide a breif comparison without using any markdown symbols like ** or ###."""
 
         # Get the response from Mistral
         
