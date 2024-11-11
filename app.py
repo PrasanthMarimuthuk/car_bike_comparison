@@ -5,6 +5,7 @@ from flask import Flask, render_template, request, jsonify
 from mistralai import Mistral
 from http.client import responses
 import asyncio
+from openai import OpenAI
 #import timeout_decorator
 
 app = Flask(__name__)
@@ -51,31 +52,7 @@ class VehicleDataManager:
         data = self.car_data if vehicle_type == 'car' else self.bike_data
         return data[(data['Make'] == brand) & (data['Model'] == model)]
 
-class AIManager:
-    def __init__(self, api_key):
-        self.client = Mistral(api_key=api_key)
-        self.model = "mistral-large-latest"
 
-    def get_comparison_suggestion(self, vehicle_type, brand1, model1, brand2, model2):
-        message = f"Compare {vehicle_type}s: {brand1} {model1} and {brand2} {model2}. Provide a brief recommendation or suggestion."
-        stream_response = self.client.chat.stream(
-            model=self.model,
-            messages=[{"role": "user", "content": message}]
-        )
-        response = ""
-        for chunk in stream_response:
-            response += chunk.data.choices[0].delta.content
-        return self._format_response(response)
-
-    def _format_response(self, response):
-        formatted = response.replace("**", "<h4>").replace("**", "</h4>")
-        formatted = formatted.replace("###", "<h3>").replace("###", "</h3>")
-        formatted = formatted.replace("Features of ", "<h3>Features of ")
-        formatted = formatted.replace(":</h3>", ":</h3>")
-        formatted = formatted.replace("- ", "<li>")
-        formatted = formatted.replace("\n", "</li>")
-        formatted = formatted.replace("</ul>", "</ul><br>")
-        return formatted
 
 # Initialize managers
 vehicle_manager = VehicleDataManager()
@@ -83,6 +60,7 @@ vehicle_manager = VehicleDataManager()
 
 @app.route('/')
 def index():
+    
     return render_template('index.html',
                          car_brands=vehicle_manager.car_brands,
                          bike_brands=vehicle_manager.bike_brands,
@@ -170,28 +148,53 @@ def get_ai_suggestions():
         model2 = request.form.get('model2')
 
         if not all([brand1, model1, brand2, model2]):
+
             return jsonify({'suggestion': 'Please select both vehicles to compare'}), 400
 
         # Initialize Mistral client
-        api_key = "MQfygqHor1qaUCRwRUFG0XPe62qbbdR8"
-        client = Mistral(api_key=api_key)
-        model = "mistral-large-latest"
+        client = OpenAI(
+  base_url = "https://integrate.api.nvidia.com/v1",
+  api_key = "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"
+)
 
         # Prepare the structured comparison prompt
-        message = f"""Provide a Brief comparison between {brand1} {model1} and {brand2} {model2} and recommendation.Please provide a breif comparison without using any markdown symbols like ** or ###."""
+        message = f"""Provide a structured comparison between {brand1} {model1} and {brand2} {model2} with the following format:
+
+Key Features:
+• List key features of {brand1} {model1}
+• List key features of {brand2} {model2}
+
+Performance Comparison:
+• Power and acceleration
+• Fuel efficiency
+• Handling and comfort
+
+Value Proposition:
+• Price comparison
+• Cost-effectiveness
+• Target audience
+
+Final Recommendation:
+• Clear recommendation based on different use cases
+
+Please provide a detailed comparison without using any markdown symbols like ** or ###."""
 
         # Get the response from Mistral
         
-        stream_response = client.chat.stream(
-            model=model,
-            messages=[{"role": "user", "content": message}]
-        )
+        completion = client.chat.completions.create(
+  model="nvidia/llama-3.1-nemotron-70b-instruct",
+  messages=[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":message}],
+  temperature=0.5,
+  top_p=0.7,
+  max_tokens=1024,
+  stream=True
+)
 
         # Collect the response
         response = ""
-        for chunk in stream_response:
-            if chunk.data.choices[0].delta.content:
-                response += chunk.data.choices[0].delta.content
+        for chunk in completion:
+            if chunk.choices[0].delta.content is not None:
+                response += chunk.choices[0].delta.content
 
         # Format the response with proper HTML structure
         def format_response(text):
