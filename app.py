@@ -254,5 +254,4 @@ Please provide a detailed comparison without using any markdown symbols like ** 
         app.logger.error(f"Error in get_ai_suggestions: {str(e)}")
         return jsonify({'suggestion': 'An error occurred while getting the AI suggestion. Please try again.'}), 500
 
-if __name__ == '__main__':
-    app.run(debug=True)
+
