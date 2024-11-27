@@ -90,7 +90,7 @@ def compare():
                              car_models=vehicle_manager.car_models,
                              bike_models=vehicle_manager.bike_models)
 
-    vehicle_type = request.form.get('vehicle_type')
+    vehicle_type = request.form.get('vehicle_type','car')
     brand1 = request.form.get('selected_brand1')
     model1 = request.form.get('selected_model1')
     brand2 = request.form.get('selected_brand2')
@@ -195,6 +195,7 @@ Please provide a detailed comparison without using any markdown symbols like ** 
         for chunk in completion:
             if chunk.choices[0].delta.content is not None:
                 response += chunk.choices[0].delta.content
+                
 
         # Format the response with proper HTML structure
         def format_response(text):
@@ -254,4 +255,5 @@ Please provide a detailed comparison without using any markdown symbols like ** 
         app.logger.error(f"Error in get_ai_suggestions: {str(e)}")
         return jsonify({'suggestion': 'An error occurred while getting the AI suggestion. Please try again.'}), 500
 
-
+if __name__ == '__main__':
+    app.run(debug=True)
