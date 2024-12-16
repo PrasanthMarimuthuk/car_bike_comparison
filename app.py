@@ -154,7 +154,7 @@ def get_ai_suggestions():
         # Initialize Mistral client
         client = OpenAI(
   base_url = "https://integrate.api.nvidia.com/v1",
-  api_key = "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"
+  api_key = "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"
 )
 
         # Prepare the structured comparison prompt
